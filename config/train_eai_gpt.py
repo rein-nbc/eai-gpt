@@ -14,7 +14,7 @@ wandb_project = 'owt'
 wandb_run_name = 'eai-gpt'
 
 gradient_accumulation_steps = 5
-batch_size = 64
+batch_size = 12
 block_size = 256 # context of up to 256 previous characters
 
 # baby GPT model :)
