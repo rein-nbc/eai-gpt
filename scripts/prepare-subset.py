@@ -9,9 +9,12 @@ def main(args):
     portion = args.portion
 
     data = np.memmap(os.path.join(input_dir, 'train.bin'), dtype=np.uint16, mode='r')
-
+    
     n_data = len(data)
-    n_subset = int(n_data * portion)
+    # n_subset = int(n_data * portion)
+    n_subset = int(0.1 * 9035582489)
+
+    print(n_subset)
 
     data_subset = np.memmap(os.path.join(output_dir, 'train.bin'), dtype=np.uint16, mode='w+', shape=(n_subset,))
     data_subset[:n_subset] = data[:n_subset]
