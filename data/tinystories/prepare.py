@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # takes 54GB in huggingface .cache dir, about 8M documents (8,013,769)
     dataset = load_dataset("roneneldan/TinyStories", num_proc=num_proc_load_dataset)
 
-    dataset['val']=dataset.pop['validation']
+    dataset['val']=dataset.pop('validation')
     # this results in:
     # >>> split_dataset
     # DatasetDict({
