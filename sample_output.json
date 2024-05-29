@@ -1,0 +1,154 @@
+{
+  "model_name": "eaiGPT",
+  "config": {
+    "layers": [
+      {
+        "class_name": "InputLayer",
+        "config": { 
+          "input_shape": [null]
+        }
+      },
+      {
+        "class_name": "Embedding",
+        "config": { "input_dim": 50257, "output_dim": 384 },
+        "weight": {
+          "type": "base64",
+          "data": "4KI1vUpiTL3AT9i8MMndu..."
+        }
+      },
+      {
+        "class_name": "Embedding",
+        "config": { "input_dim": 256, "output_dim": 384 },
+        "weight": {
+          "type": "base64",
+          "data": "rwwspS7SmUfvQ46wzyN/e..."
+        }
+      },
+      {
+        "class_name": "TransformerBlock",
+        "config": { 
+          "layers": [
+            {
+              "class_name": "LayerNorm",
+              "config": {
+                "normalized_shape": [384],
+                "bias": false
+              },
+              "weight": {
+                "type": "base64",
+                "data": "rwwspS7SmUfvQ46wzyN/e..."
+              }
+            },
+            {
+              "class_name": "CausalSelfAttention",
+              "config": {
+                "n_head": 6,
+                "layers": [
+                  {
+                    "class_name": "Dense",
+                    "config": {
+                      "input_dim": 384,
+                      "output_dim": 1152,
+                      "activation": "GELU",
+                      "bias": false
+                    },
+                    "weight": {
+                      "type": "base64",
+                      "data": "rwwspS7SmUfvQ46wzyN/e..."
+                    }
+                  },
+                  {
+                    "class_name": "Dense",
+                    "config": {
+                      "input_dim": 384,
+                      "output_dim": 384,
+                      "activation": "GELU",
+                      "bias": false
+                    },
+                    "weight": {
+                      "type": "base64",
+                      "data": "rwwspS7SmUfvQ46wzyN/e..."
+                    }
+                  }
+                ]
+              },
+              "weight": {
+                "type": "base64",
+                "data": "rwwspS7SmUfvQ46wzyN/e..."
+              }
+            },
+            {
+              "class_name": "LayerNorm",
+              "config": {
+                "normalized_shape": [384],
+                "bias": false
+              },
+              "weight": {
+                "type": "base64",
+                "data": "rwwspS7SmUfvQ46wzyN/e..."
+              }
+            },
+            {
+              "class_name": "MLP",
+              "config": {
+                "layers": [
+                  {
+                    "class_name": "Dense",
+                    "config": {
+                      "input_dim": 384,
+                      "output_dim": 1536,
+                      "activation": "GELU",
+                      "bias": false
+                    },
+                    "weight": {
+                      "type": "base64",
+                      "data": "rwwspS7SmUfvQ46wzyN/e..."
+                    }
+                  },
+                  {
+                    "class_name": "Dense",
+                    "config": {
+                      "input_dim": 1536,
+                      "output_dim": 384,
+                      "activation": "linear",
+                      "bias": false
+                    },
+                    "weight": {
+                      "type": "base64",
+                      "data": "rwwspS7SmUfvQ46wzyN/e..."
+                    }
+                  }  
+                ]  
+              }
+            }
+          ]
+        }
+      },
+      {
+        "class_name": "LayerNorm",
+        "config": {
+          "normalized_shape": [384],
+          "bias": false
+        },
+        "weight": {
+          "type": "base64",
+          "data": "rwwspS7SmUfvQ46wzyN/e..."
+        }
+      },
+      {
+        "class_name": "Dense",
+        "config": {
+          "input_dim": 384,
+          "output_dim": 50257,
+          "activation": "linear",
+          "bias": false
+        },
+        "weight": {
+          "type": "tying",
+          "tied_layer_class_name": "Embedding",
+          "tied_layer_index": 1
+        }
+      }
+    ]  
+  }
+}
