@@ -14,6 +14,70 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from functools import wraps # This convenience func preserves name and docstring
+import struct
+import base64
+
+def weights_to_base64(weights: list):
+    weight_bytes = bytearray()
+    for weight in weights:
+        if weight is not None:            
+            flatten = weight.reshape(-1).tolist()
+            flatten_packed = map(lambda i: struct.pack("@f", i), flatten)
+            for i in flatten_packed:
+                weight_bytes.extend(i)
+    weight_bytes = weight_bytes[:100]
+    weight_base64 = base64.b64encode(weight_bytes).decode()
+    return weight_base64
+
+def add_method(cls):
+    def decorator(func):
+        @wraps(func) 
+        def wrapper(self, *args, **kwargs): 
+            return func(self, *args, **kwargs)
+        setattr(cls, func.__name__, wrapper)
+        # Note we are not binding func, but wrapper which accepts self but does exactly the same as func
+        return func # returning func means func can still be used normally
+    return decorator
+
+@add_method(nn.Linear)
+def get_config(self):
+    weights = [self.weight, self.bias]
+    return {
+        "class_name": "Dense",
+        "config": {
+            "input_dim": self.in_features,
+            "output_dim": self.out_features,
+            "bias": self.bias is not None,
+            "activation": "linear", # Pytorch dense layer do not have activation at the end
+        },
+        "weight": {
+            "type": "base64",
+            "data": weights_to_base64(weights),
+        }
+    }
+
+@add_method(nn.Embedding)
+def get_config(self):
+    weights = [self.weight]
+    return {
+        "class_name": "Embedding",
+        "config": {
+            "input_dim": self.num_embeddings,
+            "output_dim": self.embedding_dim,
+        },
+        "weight": {
+            "type": "base64",
+            "data": weights_to_base64(weights),
+        }
+    }
+
+@add_method(nn.GELU)
+def get_config(self):
+    return {
+        "class_name": "GELU",
+        "approximate": self.approximate,
+    }
 
 class LayerNorm(nn.Module):
     """ LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False """
@@ -22,9 +86,23 @@ class LayerNorm(nn.Module):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(ndim))
         self.bias = nn.Parameter(torch.zeros(ndim)) if bias else None
+        self.ndim = ndim
 
     def forward(self, input):
         return F.layer_norm(input, self.weight.shape, self.weight, self.bias, 1e-5)
+    
+    def get_config(self):
+        return {
+            "class_name": "LayerNorm",
+            "config": {
+                "normalized_shape": self.ndim,
+                "bias": False
+            },
+            "weight": {
+                "type": "base64",
+                "data": "rwwspS7SmUfvQ46wzyN/e..."
+            }
+        }
 
 class CausalSelfAttention(nn.Module):
 
@@ -74,7 +152,20 @@ class CausalSelfAttention(nn.Module):
         # output projection
         y = self.resid_dropout(self.c_proj(y))
         return y
-
+    
+    def get_config(self):
+        return {
+            "class_name": "CausalSelfAttention",
+            "config": {
+                "n_embd": self.n_embd,
+                "n_head": self.n_head,
+                "layers": {
+                    "c_attn": self.c_attn.get_config(),
+                    "c_proj": self.c_proj.get_config(),
+                }
+            }
+        }
+    
 class MLP(nn.Module):
 
     def __init__(self, config):
@@ -90,6 +181,18 @@ class MLP(nn.Module):
         x = self.c_proj(x)
         x = self.dropout(x)
         return x
+    
+    def get_config(self):
+        return {
+            "class_name": "MLP",
+            "config": {
+                "layers": {
+                    "c_fc": self.c_fc.get_config(),
+                    "gelu": self.gelu.get_config(),
+                    "c_proj": self.c_proj.get_config()
+                }
+            }
+        }
 
 class Block(nn.Module):
 
@@ -104,7 +207,20 @@ class Block(nn.Module):
         x = x + self.attn(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
-
+    
+    def get_config(self):
+        return {
+            "class_name": "TransformerBlock",
+            "config": {
+                "layers": {
+                    "ln_1": self.ln_1.get_config(),
+                    "attn": self.attn.get_config(),
+                    "ln_2": self.ln_2.get_config(),
+                    "mlp": self.mlp.get_config(),
+                }
+            }
+        }
+    
 @dataclass
 class GPTConfig:
     block_size: int = 1024
@@ -328,3 +444,21 @@ class GPT(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1)
 
         return idx
+
+    def get_config(self):
+        return {
+            "model_name": "eaiGPT",
+            "layers": {
+                "input": {
+                    "class_name": "InputLayer",
+                    "config": { 
+                        "input_shape": [None],
+                    }
+                },
+                "wte": self.transformer.wte.get_config(),
+                "wpe": self.transformer.wpe.get_config(),
+                "blocks": [block.get_config() for block in self.transformer.h],
+                "ln_f": self.transformer.ln_f.get_config(),
+                "lm_head": self.lm_head.get_config(),
+            }
+        }

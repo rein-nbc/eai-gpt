@@ -42,6 +42,7 @@
             {
               "class_name": "CausalSelfAttention",
               "config": {
+                "n_embd": 384,
                 "n_head": 6,
                 "layers": [
                   {
@@ -49,7 +50,6 @@
                     "config": {
                       "input_dim": 384,
                       "output_dim": 1152,
-                      "activation": "GELU",
                       "bias": false
                     },
                     "weight": {
@@ -62,7 +62,6 @@
                     "config": {
                       "input_dim": 384,
                       "output_dim": 384,
-                      "activation": "GELU",
                       "bias": false
                     },
                     "weight": {
@@ -97,7 +96,6 @@
                     "config": {
                       "input_dim": 384,
                       "output_dim": 1536,
-                      "activation": "GELU",
                       "bias": false
                     },
                     "weight": {
@@ -106,11 +104,13 @@
                     }
                   },
                   {
+                    "class_name": "GELU"
+                  },
+                  {
                     "class_name": "Dense",
                     "config": {
                       "input_dim": 1536,
                       "output_dim": 384,
-                      "activation": "linear",
                       "bias": false
                     },
                     "weight": {
@@ -140,7 +140,6 @@
         "config": {
           "input_dim": 384,
           "output_dim": 50257,
-          "activation": "linear",
           "bias": false
         },
         "weight": {

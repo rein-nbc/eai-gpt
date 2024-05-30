@@ -7,6 +7,7 @@ from contextlib import nullcontext
 import torch
 import tiktoken
 from model import GPTConfig, GPT
+import json
 
 # -----------------------------------------------------------------------------
 init_from = 'resume' # either 'resume' (from an out_dir) or a gpt2 variant (e.g. 'gpt2-xl')
@@ -80,9 +81,17 @@ if start.startswith('FILE:'):
 start_ids = encode(start)
 x = (torch.tensor(start_ids, dtype=torch.long, device=device)[None, ...])
 
+for block in model.transformer.h:
+    block.mlp.gelu.approximate = 'none'
+
 # run generation
 with torch.no_grad():
     with ctx:
+        config = model.get_config()
+        json_data = json.dumps(config, indent=2)
+        with open('output.json', 'w') as f:
+            f.write(json_data)
+
         for k in range(num_samples):
             y = model.generate(x, max_new_tokens, temperature=temperature, top_k=top_k)
             print(decode(y[0].tolist()))
