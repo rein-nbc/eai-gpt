@@ -35,6 +35,7 @@ def main():
         tokenizer.train(text, 10000, verbose=True)
         # writes two files in the models directory: name.model, and name.vocab
         tokenizer.save(os.path.join(output_dir,prefix))
+        resume=True
         t1 = time.time()
 
         print(f"Training took {t1 - t0:.2f} seconds")
