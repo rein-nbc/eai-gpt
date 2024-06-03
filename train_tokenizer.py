@@ -20,22 +20,46 @@ def main():
     os.makedirs(output_dir,exist_ok=True)
 
     # open some text and train a vocab of 10000 tokens
-    for file_name in natsorted(os.listdir(data_dir)):
-        file_path = os.path.join(data_dir,file_name)
-        text = open(file_path, "r", encoding="utf-8").read()
-        prefix = "trained_model"
-        print("---Finished reading file---\n")
-        t0 = time.time()
+    # for file_name in natsorted(os.listdir(data_dir)):
+    #     file_path = os.path.join(data_dir,file_name)
+    #     text = open(file_path, "r", encoding="utf-8").read()
+    #     prefix = "trained_model"
+    #     print(f"---Finished reading file from {file_path}---\n")
+    #     t0 = time.time()
 
-        # construct the Tokenizer object and kick off verbose training
-        tokenizer = RegexTokenizer()
-        if resume:
-            tokenizer.load(os.path.join(output_dir,f"{prefix}.model"))
-        print("---Start training tokenizer---\n")
-        tokenizer.train(text, 10000, verbose=True)
-        # writes two files in the models directory: name.model, and name.vocab
-        tokenizer.save(os.path.join(output_dir,prefix))
-        resume=True
-        t1 = time.time()
+    #     # construct the Tokenizer object and kick off verbose training
+    #     tokenizer = RegexTokenizer()
+    #     if resume:
+    #         print(f"Load checkpoint from {os.path.join(output_dir, f'{prefix}.model')}")
+    #         tokenizer.load(os.path.join(output_dir,f"{prefix}.model"))
+    #     print("---Start training tokenizer---\n")
+    #     tokenizer.train(text, 512, verbose=True)
+    #     # writes two files in the models directory: name.model, and name.vocab
+    #     tokenizer.save(os.path.join(output_dir,prefix))
+    #     resume=True
+    #     t1 = time.time()
 
-        print(f"Training took {t1 - t0:.2f} seconds")
+    #     print(f"Training took {t1 - t0:.2f} seconds")
+    #         file_path = os.path.join(data_dir,file_name)
+    
+    text = open(data_dir, "r", encoding="utf-8").read()
+    prefix = "trained_model"
+    
+    t0 = time.time()
+
+    # construct the Tokenizer object and kick off verbose training
+    tokenizer = RegexTokenizer()
+    if resume:
+        print(f"Load checkpoint from {os.path.join(output_dir, f'{prefix}.model')}")
+        tokenizer.load(os.path.join(output_dir,f"{prefix}.model"))
+    print("---Start training tokenizer---\n")
+    tokenizer.train(text, 10000, verbose=True)
+    # writes two files in the models directory: name.model, and name.vocab
+    tokenizer.save(os.path.join(output_dir,prefix))
+    resume=True
+    t1 = time.time()
+
+    print(f"Training took {t1 - t0:.2f} seconds")
+
+if __name__=='__main__':
+    main()
