@@ -12,3 +12,4 @@ env/
 venv/
 wandb/
 tests/
+test_data/

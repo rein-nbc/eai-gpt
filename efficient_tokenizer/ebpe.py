@@ -198,10 +198,12 @@ class BPETrainer:
     def train_from_iter(self, data: Iterable[str], verbose:bool = False) -> BPE:
         self.init_word_pair(data, self.min_freq, verbose)
         self.epoch = 0
-        idx = 256
-        while len(self.vocab) < self.vocab_size:
+        idx = 127
+        while len(self.vocab) < (self.vocab_size):
             comb, freq = self.most_frequent_combination()
-            if freq <= self.min_freq:
+            # if len(self.vocab) > (self.vocab_size-256):
+            #     break
+            if freq < self.min_freq:
                 break
             self.merge_word(comb, freq)
             if verbose and (freq > int(1e5) or self.epoch % 50 == 0):
@@ -230,7 +232,7 @@ class BPETrainer:
         word_pair_pos = defaultdict(lambda: array('I'))
         # vocab = defaultdict(int)
         word_count = defaultdict(int)
-        vocab = {f"{bytes([idx])}": idx for idx in range(256)}
+        vocab = {f"{bytes([idx]).decode('utf-8', errors='replace')}": idx for idx in range(127)}
 
         if verbose:
             print("Initing pair count...")
@@ -395,23 +397,3 @@ class BPETrainer:
             puncs = '|'.join(f"{re.escape(punc)}" for punc in puncs)
             pattern = re.compile(f"({puncs})+")
             return pattern.sub("#", text)
-
-if __name__ == "__main__":
-    a = BPETrainer(
-        int(1000), min_freq=15,
-        compress_threshold=0.3,
-        single_char=False
-    ).train_from_file(
-        "data/train_BPE.txt",
-        verbose=True,
-    )
-    a.dump_vocab("output/epbe_vocab.json")
-    with open("vocab.txt", "w") as f:
-        f.write("\n".join(a.vocab.keys()))
-    # with open("data/test_BPE.txt") as f:
-    #     tokens = a.tokenize(f.read())
-    # with open("tokenization_result.txt", "w") as f:
-    #     f.write(" ".join(tokens))
-
-    text = "My name is edgar"
-    print(a.tokenize(text))
