@@ -2,7 +2,6 @@ import sys
 from array import array
 from collections import defaultdict, OrderedDict
 from itertools import chain
-from copy import deepcopy
 import json
 import heapq
 from tqdm import tqdm
@@ -21,14 +20,12 @@ except:
         next(b, None)
         return zip(a, b)
 
-
 def count_unit(data):
     count = 0
     for d in data:
         if len(d) == 1:
             count += 1
     return count
-
 
 def preproc_idx(full_indices, word_a, word_b):
     if word_a == word_b:  
@@ -47,62 +44,21 @@ def preproc_idx(full_indices, word_a, word_b):
 class BPE:
     def __init__(self, vocab: Optional[Set[str]]) -> None:
         self.vocab = vocab if vocab else {}
-        self.max_len = max(map(len, self.vocab)) if self.vocab else 0
 
-    def decode_forward(self, data: str):
-        i, j = 0, min(self.max_len, len(data))
-        res = []
-        while i < len(data):
-            while j > i:
-                if data[i:j] in self.vocab:
-                    res.append(data[i:j])
-                    i = j
-                    j = min(i + self.max_len, len(data))
-                    break
-                else:
-                    j -= 1
+    def decode(self,ids):
+        # given ids (list of integers), return Python string
+        part_bytes = []
+        inverse_vocab = {idx:word for word,idx in self.vocab.items()}
+        for idx in ids:
+            if idx in inverse_vocab:
+                part_bytes.append(inverse_vocab[idx])
             else:
-                res.append(data[i])
-                i += 1
-                j = min(i + self.max_len, len(data))
-        return res
+                raise ValueError(f"invalid token id: {idx}")
+        text = "".join(part_bytes)
 
-    def decode_backward(self, data: str):
-        i, j = len(data), max(len(data) - self.max_len, 0)
-        res = []
-        while i > 0:
-            while j < i:
-                if data[j:i] in self.vocab:
-                    res.append(data[j:i])
-                    i = j
-                    j = max(i - self.max_len, 0)
-                    break
-                else:
-                    j += 1
-            else:
-                res.append(data[i - 1])
-                i -= 1
-                j = max(i - self.max_len, 0)
-        res.reverse()
-        return res
+        return text
 
-    def decode_bidirectional(self, data: str):
-        res = []
-        for d in data.split("\n"):
-            forward = self.decode_forward(d)
-            backward = self.decode_backward(d)
-            if len(forward) < len(backward):
-                res.extend(forward)
-            elif len(forward) > len(backward):
-                res.extend(backward)
-            elif count_unit(forward) < count_unit(backward):
-                res.extend(forward)
-            else:
-                res.extend(backward)
-            res.append("\n")
-        return res[:-1]
-
-    def tokenize(self, text: str) -> List[str]:
+    def encode(self, text: str) -> List[str]:
         text = f"#{text}#"
         word_pair_pos, pair_freq_queue, seg_status = self.init_count(text)
         while len(pair_freq_queue) > 0:
@@ -120,7 +76,6 @@ class BPE:
         word_pair_pos = defaultdict(set)
         for i, (pre_char, nxt_char) in enumerate(pairwise(text), start=0):
             word_pair_pos[(pre_char, nxt_char)].add(i)
-        
         word_pair_pos_valid, pair_freq_queue = defaultdict(set), []
         for word_pair, indices in word_pair_pos.items():
             if "".join(word_pair) not in self.vocab:
@@ -128,6 +83,7 @@ class BPE:
             word_pair_pos_valid[word_pair] = indices
             pair_freq_queue.append((-self.vocab["".join(word_pair)], word_pair))
         word_pair_pos = word_pair_pos_valid
+
         heapq.heapify(pair_freq_queue)
         seg_status = array('B', [1] * len(text))
         return word_pair_pos, pair_freq_queue, seg_status
@@ -171,6 +127,7 @@ class BPE:
             word_pair_pos[pair] = indices
             heapq.heappush(queue, (-self.vocab["".join(pair)], pair))
 
+
     def dump_vocab(self, path):
         print(f"Dump Vocab as json file to {path}")
         with open(path, "w") as f:
@@ -201,21 +158,19 @@ class BPETrainer:
         idx = 127
         while len(self.vocab) < (self.vocab_size):
             comb, freq = self.most_frequent_combination()
-            # if len(self.vocab) > (self.vocab_size-256):
-            #     break
             if freq < self.min_freq:
                 break
             self.merge_word(comb, freq)
             if verbose and (freq > int(1e5) or self.epoch % 50 == 0):
                 self.log(self.epoch, comb, freq)
             word_comb = "".join(comb)
-            # self.vocab[word_comb] = self.word_count[word_comb] = freq
+
             self.word_count[word_comb] = freq
             self.vocab[word_comb] = idx
             idx += 1
             self.epoch += 1
         if verbose:
-            print(f"Final Vocab ({'' if self.single_char else 'Not'} Including Single Characters) Size: {len(self.vocab)} in {self.epoch} Epoch")
+            print(f"Final Vocab Size: {len(self.vocab)} in {self.epoch} Epoch")
         return BPE(self.vocab)
 
     @classmethod
@@ -230,8 +185,9 @@ class BPETrainer:
         corpus = self.replace_punc("\n".join(chain([''], corpus_iter, [''])), verbose)
         assert 4294967295 > len(corpus)
         word_pair_pos = defaultdict(lambda: array('I'))
-        # vocab = defaultdict(int)
+        
         word_count = defaultdict(int)
+        # vocab = {idx: f"{bytes([idx]).decode('utf-8', errors='replace')}" for idx in range(127)}
         vocab = {f"{bytes([idx]).decode('utf-8', errors='replace')}": idx for idx in range(127)}
 
         if verbose:
@@ -243,7 +199,7 @@ class BPETrainer:
             for i, (pre_char, nxt_char) in pbar:
                 if pre_char == "#":
                     continue
-                # vocab[pre_char] += 1
+                
                 word_count[pre_char] += 1
                 if nxt_char == "#":
                     continue
@@ -268,7 +224,6 @@ class BPETrainer:
         self.word_count = word_count
         self.vocab = vocab
         self.corpus = corpus
-        # self.word_count = deepcopy(self.vocab)
         self.seg_status = array('B', [1] * (len(self.corpus) + 2))
         if verbose:
             print("init finish!")
