@@ -11,5 +11,4 @@ input.txt
 env/
 venv/
 wandb/
-tests/
-test_data/
+test.py

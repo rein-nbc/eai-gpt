@@ -2,8 +2,7 @@ import os
 import argparse
 import time
 from natsort import natsorted
-from tokenizer.regex import RegexTokenizer
-from efficient_tokenizer.ebpe import BPE,BPETrainer
+from tokenizer.ebpe import BPE,BPETrainer
 
 def parse_args():
     parser = argparse.ArgumentParser("Entry script to launch training")
