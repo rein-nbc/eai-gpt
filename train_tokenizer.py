@@ -24,7 +24,7 @@ def main():
         tokenizer.load_vocab(os.path.join(output_dir,"vocab.json"))
     else:
         tokenizer = BPETrainer(
-            int(1000), min_freq=1,
+            int(10000), min_freq=1,
             compress_threshold=0.3
         ).train_from_file(
             data_dir,
@@ -33,10 +33,10 @@ def main():
 
         tokenizer.dump_vocab(os.path.join(output_dir,"vocab.json"))
 
-    text = "Once upon a time, there is a wolf"
+    text = " Once upon a time, there is a wolf"
     print(tokenizer.encode(text))
 
-    print(f"decode: {tokenizer.decode([697, 297, 32, 659, 133, 32, 97, 32, 523, 101, 44, 32, 175, 510, 32, 195, 32, 97, 32, 545, 108, 102])}")
+    # print(f"decode: {tokenizer.decode([697, 297, 32, 659, 133, 32, 97, 32, 523, 101, 44, 32, 175, 510, 32, 195, 32, 97, 32, 545, 108, 102])}")
 
 if __name__=='__main__':
     main()
