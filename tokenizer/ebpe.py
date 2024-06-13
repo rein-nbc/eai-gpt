@@ -341,11 +341,27 @@ class BPETrainer:
                     '(', ')', '"', '"', '\'', '\'', '<', '>', '[', ']', '.','~']
         puncs = (*puncs_zh, *puncs_en, "\n", "\t")
 
-        if verbose:
-            print("Using re.sub for replacing punctuations")
-        puncs = '|'.join(f"{re.escape(punc)}" for punc in puncs)
+        # if verbose:
+        #     print("Using re.sub for replacing punctuations")
+        # puncs = '|'.join(f"{re.escape(punc)}" for punc in puncs)
 
-        pattern = re.compile(f"({puncs})+")
-        result = pattern.sub("# ", text)
-        result = re.sub(r'\s*#\s*', '# ', result)
-        return result
+        # pattern = re.compile(f"({puncs})+")
+        # result = pattern.sub("# ", text)
+        # result = re.sub(r'\s*#\s*', '# ', result)
+        i_name = sys.implementation.name
+        if i_name == 'cpython':
+            if verbose:
+                print(f"[{i_name}] using string.translate for replacing punctuations")
+            table = str.maketrans(dict.fromkeys(puncs, "# "))
+            result = text.translate(table)
+            result = re.sub(r'\s*#\s*', '# ', result)
+            print(result)
+            return result
+        else:
+            if verbose:
+                print(f"[{i_name}] using re.sub for replacing punctuations")
+            puncs = '|'.join(f"{re.escape(punc)}" for punc in puncs)
+            pattern = re.compile(f"({puncs})+")
+            result = pattern.sub("# ", text)
+            result = re.sub(r'\s*#\s*', '# ', result)
+            return result
