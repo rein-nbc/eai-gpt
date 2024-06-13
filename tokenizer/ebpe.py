@@ -352,10 +352,10 @@ class BPETrainer:
         if i_name == 'cpython':
             if verbose:
                 print(f"[{i_name}] using string.translate for replacing punctuations")
-            table = str.maketrans(dict.fromkeys(puncs, "# "))
+            table = str.maketrans(dict.fromkeys(puncs, "#"))
             result = text.translate(table)
-            result = re.sub(r'\s*#\s*', '# ', result)
-            print(result)
+            # result = re.sub(r'\s*#\s*', '# ', result)
+            result = result.replace('#', '# ')
             return result
         else:
             if verbose:
